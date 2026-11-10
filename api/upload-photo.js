@@ -1,65 +1,135 @@
-const { checkAccess, getGoogleClients, getDriveFolder, apiError } = require('../lib/google');
 
-function safePart(value) {
-  return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 50) || 'ITEM';
-}
+'use strict';
+
+const {
+  checkAccess,
+  callBridge,
+  apiError
+} = require('../lib/google');
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'Method tidak didukung.' });
-  try {
-    checkAccess(req);
-    const { reportId, packageId, dataUrl } = req.body || {};
-    if (!reportId || !packageId || !dataUrl) throw new Error('Data foto belum lengkap.');
 
-    const match = String(dataUrl).match(/^data:(image\/(?:jpeg|jpg|png|webp));base64,([\s\S]+)$/i);
-    if (!match) throw new Error('Format foto tidak didukung. Gunakan JPG, PNG, atau WEBP.');
+  // Hanya menerima POST
+  if (req.method !== 'POST') {
 
-    const mimeType = match[1].toLowerCase() === 'image/jpg' ? 'image/jpeg' : match[1].toLowerCase();
-    const buffer = Buffer.from(match[2], 'base64');
-    if (!buffer.length) throw new Error('File foto kosong.');
-    if (buffer.length > 3 * 1024 * 1024) throw new Error('Foto terlalu besar. Kompres foto sebelum diunggah (maksimal 3 MB).');
+    res.setHeader('Allow', 'POST');
 
-    const { drive } = await getGoogleClients();
-    const folder = await getDriveFolder(drive);
-    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
-    const fileName = `HD_${safePart(reportId)}_${safePart(packageId)}.${ext}`;
-    const escapedName = fileName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-
-    const existing = await drive.files.list({
-      q: `name='${escapedName}' and '${folder.id}' in parents and trashed=false`,
-      pageSize: 5,
-      fields: 'files(id,name,webViewLink)',
-      supportsAllDrives: true,
-      includeItemsFromAllDrives: true
+    return res.status(405).json({
+      ok: false,
+      message: 'Method tidak didukung.'
     });
 
-    let file;
-    if (existing.data.files && existing.data.files.length) {
-      const fileId = existing.data.files[0].id;
-      const updated = await drive.files.update({
-        fileId,
-        media: { mimeType, body: buffer },
-        fields: 'id,name,webViewLink',
-        supportsAllDrives: true
-      });
-      file = updated.data;
-    } else {
-      const created = await drive.files.create({
-        requestBody: { name: fileName, mimeType, parents: [folder.id] },
-        media: { mimeType, body: buffer },
-        fields: 'id,name,webViewLink',
-        supportsAllDrives: true
-      });
-      file = created.data;
+  }
+
+  try {
+
+    // 1. Validasi kode akses petugas
+    checkAccess(req);
+
+    // 2. Ambil data foto
+    const payload = req.body || {};
+
+    const reportId = String(
+      payload.reportId || ''
+    ).trim();
+
+    const packageId = String(
+      payload.packageId || ''
+    ).trim();
+
+    const dataUrl = String(
+      payload.dataUrl || ''
+    );
+
+    // 3. Validasi kelengkapan
+    if (!reportId || !packageId || !dataUrl) {
+
+      throw new Error(
+        'Data foto belum lengkap. Periksa ID laporan, ID paket, dan foto.'
+      );
+
     }
 
+    // 4. Validasi format foto
+    const match = dataUrl.match(
+      /^data:(image\/(?:jpeg|jpg|png|webp));base64,([\s\S]+)$/i
+    );
+
+    if (!match) {
+
+      throw new Error(
+        'Format foto tidak didukung. Gunakan JPG, PNG, atau WEBP.'
+      );
+
+    }
+
+    // 5. Validasi ukuran foto
+    const buffer = Buffer.from(
+      match[2],
+      'base64'
+    );
+
+    if (!buffer.length) {
+
+      throw new Error(
+        'File foto kosong atau tidak terbaca.'
+      );
+
+    }
+
+    if (buffer.length > 3 * 1024 * 1024) {
+
+      throw new Error(
+        'Ukuran foto melebihi 3 MB. Silakan kompres foto terlebih dahulu.'
+      );
+
+    }
+
+    // 6. Kirim foto ke Google Apps Script Bridge
+    const result = await callBridge(
+      'uploadPhoto',
+      {
+        reportId: reportId,
+        packageId: packageId,
+        dataUrl: dataUrl
+      }
+    );
+
+    // 7. Pastikan upload berhasil
+    if (!result || result.ok !== true) {
+
+      throw new Error(
+        result && result.message
+          ? result.message
+          : 'Google Drive gagal menerima foto.'
+      );
+
+    }
+
+    // 8. Kembalikan informasi foto ke frontend
     return res.status(200).json({
+
       ok: true,
-      fileId: file.id,
-      fileName: file.name,
-      url: file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`
+
+      fileId: result.fileId,
+
+      fileName: result.fileName,
+
+      url: result.url,
+
+      message: 'Foto berhasil disimpan ke Google Drive.'
+
     });
+
   } catch (error) {
+
+    console.error(
+      'UPLOAD PHOTO ERROR:',
+      error
+    );
+
     return apiError(res, error);
+
   }
+
 };
