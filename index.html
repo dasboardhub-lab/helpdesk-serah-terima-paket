@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#bd1455">
+  <meta name="theme-color" content="#bf1655">
   <meta name="description" content="Helpdesk Serah Terima Paket - pencatatan Bagshield dan paket bermasalah.">
   <title>Helpdesk Serah Terima Paket</title>
   <link rel="stylesheet" href="/styles.css">
@@ -17,10 +17,10 @@
       <div class="brand-mark">📦</div>
       <div class="eyebrow">ANTERAJA · OPERASIONAL</div>
       <h1>Helpdesk Serah Terima Paket</h1>
-      <p class="muted">Masukkan kode akses tim untuk membuka aplikasi.</p>
+      <p class="muted">Masukkan kode akses tim untuk mulai mencatat laporan.</p>
       <label for="accessPin">Kode akses</label>
-      <input id="accessPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Masukkan kode akses">
-      <button id="btnUnlock" class="btn primary full">Masuk ke Aplikasi</button>
+      <input id="accessPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Kode akses tim">
+      <button id="btnUnlock" class="btn primary full" type="button">Masuk ke Aplikasi</button>
       <div id="gateMessage" class="form-message" role="status"></div>
       <p class="tiny muted">Kode akses diberikan oleh admin aplikasi.</p>
     </div>
@@ -37,184 +37,204 @@
       </div>
       <div class="topbar-right">
         <span id="connectionBadge" class="connection-badge pending"><i></i> Menghubungkan</span>
-        <button id="btnExit" class="icon-btn" title="Keluar" aria-label="Keluar">↪</button>
+        <button id="btnExit" class="icon-btn" type="button" title="Keluar" aria-label="Keluar">↪</button>
       </div>
     </header>
 
     <div class="content-wrap">
-      <section class="hero">
-        <div class="hero-copy">
-          <div class="eyebrow light">PENCATATAN & MONITORING</div>
-          <h1>Helpdesk Kendala<br>Serah Terima Paket</h1>
-          <p>Catat Bagshield, paket beresiko, dan bukti foto dalam satu laporan.</p>
-        </div>
-        <div class="hero-icon">🛡️</div>
-      </section>
-
       <nav class="step-nav" aria-label="Tahapan laporan">
-        <div class="step active" id="stepMain"><span>1</span><b>Data Utama</b></div>
-        <div class="step" id="stepBags"><span>2</span><b>Bagshield & Paket</b></div>
-        <div class="step" id="stepFinish"><span>3</span><b>Finalisasi</b></div>
+        <div class="step active" id="stepMain"><span>1</span><b>Data utama</b></div>
+        <div class="step" id="stepBags"><span>2</span><b>Bagshield & paket</b></div>
+        <div class="step" id="stepFinish"><span>3</span><b>Selesai</b></div>
       </nav>
 
-      <section id="mainSection" class="panel">
+      <!-- STEP 1: DATA UTAMA -->
+      <section id="mainSection" class="panel main-panel">
         <div class="section-heading">
           <div>
-            <div class="eyebrow">STEP 01</div>
-            <h2>Data Utama Pengiriman</h2>
-            <p>Lengkapi identitas pengiriman sebelum mencatat Bagshield.</p>
+            <div class="eyebrow">MULAI LAPORAN</div>
+            <h1>Data pengiriman</h1>
+            <p>Isi sekali untuk seluruh Bagshield dalam laporan ini.</p>
           </div>
           <span class="section-icon">📝</span>
         </div>
+
         <div class="form-grid">
           <div class="field">
-            <label for="shipDate">Tanggal Pengiriman <em>*</em></label>
+            <label for="shipDate">Tanggal pengiriman <em>*</em></label>
             <input id="shipDate" type="date" required>
           </div>
           <div class="field">
-            <label for="staff">Nama Petugas <em>*</em></label>
-            <input id="staff" type="text" maxlength="100" placeholder="Nama petugas pelapor" autocomplete="name" required>
+            <label for="staff">Nama petugas <em>*</em></label>
+            <input id="staff" type="text" maxlength="100" placeholder="Nama petugas" autocomplete="name" required>
           </div>
           <div class="field field-wide">
-            <label for="hub">HUB Pengirim <em>*</em></label>
-            <input id="hub" type="text" maxlength="100" placeholder="Contoh: HUB MND / STAGING BJM" required>
+            <label for="hub">HUB pengirim <em>*</em></label>
+            <input id="hub" type="text" maxlength="100" placeholder="Contoh: HUB MND / STAGING BJM" autocomplete="organization" required>
           </div>
         </div>
+
         <div class="panel-footer">
-          <span class="helper">Tanda <em>*</em> wajib diisi.</span>
-          <button id="btnContinue" class="btn primary">Lanjut ke Bagshield <span>→</span></button>
+          <span class="helper"><em>*</em> Wajib diisi.</span>
+          <button id="btnContinue" class="btn primary" type="button">Lanjut ke Bagshield <span>→</span></button>
         </div>
       </section>
 
+      <!-- STEP 2: BAGSHIELD & PAKET -->
       <section id="bagSection" class="hidden">
-        <div class="panel compact-panel">
-          <div class="section-heading">
+        <div class="report-context panel">
+          <div class="context-copy">
+            <div class="eyebrow">LAPORAN AKTIF</div>
+            <strong>Data pengiriman sudah diisi</strong>
+            <span>Tambahkan Bagshield satu per satu.</span>
+          </div>
+          <button id="btnBackMain" class="btn ghost small-btn" type="button">Ubah data</button>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-tile"><strong id="metricBags">0</strong><span>Bagshield</span></div>
+          <div class="summary-tile"><strong id="metricPackages">0</strong><span>Total paket</span></div>
+          <div class="summary-tile"><strong id="metricNoResi">0</strong><span>Tanpa resi</span></div>
+        </div>
+
+        <section class="panel bag-editor">
+          <div class="editor-heading">
             <div>
-              <div class="eyebrow">STEP 02</div>
-              <h2>Data Bagshield & Paket</h2>
-              <p>Tambahkan paket ke Bagshield, kemudian simpan sementara untuk lanjut ke Bagshield berikutnya.</p>
+              <div class="eyebrow">BAGSHIELD AKTIF</div>
+              <h1 id="editorTitle">Bagshield baru</h1>
             </div>
-            <button id="btnBackMain" class="btn ghost small-btn">Ubah Data Utama</button>
+            <span id="editorStatus" class="status-tag">Belum disimpan</span>
           </div>
-          <div class="summary-grid">
-            <div class="summary-tile"><strong id="metricBags">0</strong><span>Bagshield</span></div>
-            <div class="summary-tile"><strong id="metricPackages">0</strong><span>Total Paket</span></div>
-            <div class="summary-tile"><strong id="metricNoResi">0</strong><span>Tanpa Resi</span></div>
-          </div>
-          <div class="notice"><b>Petunjuk:</b> scan nomor Bagshield terlebih dahulu. Setelah itu masukkan seluruh paket yang ada di dalamnya. Paket tanpa resi wajib dilengkapi foto dan ciri-ciri fisik.</div>
 
-          <div class="bag-editor">
-            <div class="editor-heading">
+          <div class="field">
+            <label for="bagshieldNo">Nomor Bagshield <em>*</em></label>
+            <div class="input-action-row">
+              <input id="bagshieldNo" type="text" maxlength="120" placeholder="Scan atau ketik nomor Bagshield" autocomplete="off" autocapitalize="off" spellcheck="false">
+              <button id="btnScanBag" type="button" class="btn scan-btn"><span>▦</span> Scan</button>
+            </div>
+          </div>
+
+          <div class="package-entry">
+            <div class="entry-heading">
               <div>
-                <div class="eyebrow">BAGSHIELD AKTIF</div>
-                <h3 id="editorTitle">Bagshield Baru</h3>
+                <div class="eyebrow">INPUT PAKET</div>
+                <h2>Jenis paket</h2>
               </div>
-              <span id="editorStatus" class="status-tag">Belum disimpan</span>
-            </div>
-            <div class="field">
-              <label for="bagshieldNo">Nomor Bagshield <em>*</em></label>
-              <div class="input-action-row">
-                <input id="bagshieldNo" type="text" maxlength="120" placeholder="Scan barcode atau input manual" autocomplete="off">
-                <button id="btnScanBag" type="button" class="btn outline scan-btn"><span class="scan-symbol">▦</span> Scan</button>
-              </div>
-              <small>Scanner USB/Bluetooth juga dapat digunakan dengan memilih kolom ini terlebih dahulu.</small>
+              <span id="activePackageCount" class="count-tag">0 paket</span>
             </div>
 
-            <div class="field package-type-field">
-              <label>Status paket</label>
-              <div class="segmented" role="group" aria-label="Status paket">
-                <button id="typeHasResi" type="button" class="selected">Ada Resi</button>
-                <button id="typeNoResi" type="button">Tidak Ada Resi</button>
-              </div>
+            <div class="segmented" role="group" aria-label="Status paket">
+              <button id="typeHasResi" type="button" class="selected">Ada resi</button>
+              <button id="typeNoResi" type="button">Tanpa resi</button>
             </div>
 
             <div id="packageForm" class="package-form">
               <div id="resiFields">
                 <div class="field">
-                  <label for="awb">Nomor Resi / AWB <em>*</em></label>
+                  <label for="awb">Nomor resi / AWB <em>*</em></label>
                   <div class="input-action-row">
-                    <input id="awb" type="text" maxlength="120" placeholder="Scan barcode atau input nomor resi" autocomplete="off">
-                    <button id="btnScanAwb" type="button" class="btn outline scan-btn"><span class="scan-symbol">▦</span> Scan</button>
+                    <input id="awb" type="text" maxlength="120" placeholder="Scan atau ketik nomor resi" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+                    <button id="btnScanAwb" type="button" class="btn scan-btn"><span>▦</span> Scan</button>
                   </div>
+                  <small>Scan kamera akan langsung menambahkan AWB. Scanner fisik: tekan Enter setelah scan.</small>
                 </div>
-                <div class="field spacing-top">
-                  <label for="resiNotes">Keterangan paket <small>(opsional)</small></label>
-                  <textarea id="resiNotes" rows="2" placeholder="Contoh: kemasan penyok, lakban terbuka, kondisi paket..."></textarea>
-                </div>
+                <details class="optional-details">
+                  <summary>Tambah keterangan (opsional)</summary>
+                  <div class="field details-field">
+                    <textarea id="resiNotes" rows="2" placeholder="Kondisi kemasan atau catatan paket"></textarea>
+                  </div>
+                </details>
               </div>
 
               <div id="noResiFields" class="hidden">
-                <div class="notice warning"><b>Paket tanpa resi:</b> foto bukti dan ciri-ciri paket wajib diisi agar paket dapat diidentifikasi.</div>
-                <div class="field spacing-top">
-                  <label for="characteristics">Ciri-ciri Fisik Paket <em>*</em></label>
-                  <textarea id="characteristics" rows="3" placeholder="Contoh: kardus cokelat ukuran sedang, lakban hitam, terdapat label tujuan..., bentuk, warna, ukuran, atau ciri yang terlihat."></textarea>
+                <div class="notice warning">Paket tanpa resi wajib difoto dan diberi ciri-ciri fisik.</div>
+                <div class="field details-field">
+                  <label for="characteristics">Ciri-ciri fisik paket <em>*</em></label>
+                  <textarea id="characteristics" rows="3" placeholder="Contoh: kardus cokelat ukuran sedang, lakban hitam, label tujuan, bentuk dan ukuran paket..."></textarea>
                 </div>
               </div>
 
-              <div class="field spacing-top">
-                <label>Foto Bukti <span id="photoRequirement" class="muted-label">(opsional untuk paket ber-resi)</span></label>
+              <div class="photo-field">
+                <div class="photo-heading">
+                  <label>Foto bukti <span id="photoRequirement" class="muted-label">(opsional untuk paket ber-resi)</span></label>
+                </div>
                 <div class="photo-upload-row">
-                  <label class="btn photo-btn" for="packagePhoto">📷 Ambil / Pilih Foto</label>
+                  <label class="btn photo-btn" for="packagePhoto">📷 Ambil foto</label>
                   <input id="packagePhoto" class="file-input" type="file" accept="image/*" capture="environment">
                   <img id="photoPreview" class="photo-preview hidden" alt="Pratinjau foto paket">
-                  <div id="photoInfo" class="photo-info">Belum ada foto</div>
+                  <span id="photoInfo" class="photo-info">Belum ada foto</span>
                 </div>
-                <small>Foto dikompres di perangkat sebelum dikirim ke Google Drive.</small>
               </div>
 
-              <div class="form-actions">
-                <button id="btnAddPackage" class="btn primary full">＋ Tambahkan Paket ke Bagshield</button>
-              </div>
-            </div>
-
-            <div class="list-heading">
-              <div><h3>Paket dalam Bagshield Ini</h3><span id="activePackageCount" class="muted">0 paket</span></div>
-            </div>
-            <div id="activePackageList" class="package-list empty-list">Belum ada paket yang ditambahkan.</div>
-            <div class="form-actions editor-actions">
-              <button id="btnSaveBag" class="btn orange full">▣ Simpan Sementara Bagshield</button>
-              <button id="btnCancelEdit" class="btn danger hidden">Batal Revisi</button>
+              <button id="btnAddPackage" class="btn primary full add-package-btn" type="button">＋ Tambahkan paket</button>
             </div>
           </div>
-        </div>
 
-        <div class="panel">
-          <div class="section-heading list-section-heading">
-            <div><div class="eyebrow">DRAFT LAPORAN</div><h2>Bagshield Tersimpan Sementara</h2><p>Data masih berada di draft perangkat sampai laporan difinalisasi.</p></div>
+          <div class="list-heading">
+            <div>
+              <h2>Paket dalam Bagshield ini</h2>
+              <span class="muted">Periksa daftar sebelum menyimpan Bagshield.</span>
+            </div>
+          </div>
+          <div id="activePackageList" class="package-list empty-list">Belum ada paket. Scan atau masukkan nomor resi.</div>
+
+          <div class="form-actions editor-actions">
+            <button id="btnSaveBag" class="btn orange full" type="button">Simpan Bagshield sementara</button>
+            <button id="btnCancelEdit" class="btn danger hidden" type="button">Batal revisi</button>
+          </div>
+        </section>
+
+        <details class="saved-panel panel" id="savedPanel">
+          <summary>
+            <div>
+              <span class="eyebrow">DRAFT LAPORAN</span>
+              <strong>Bagshield tersimpan</strong>
+            </div>
             <span id="savedBagCount" class="count-tag">0 Bagshield</span>
-          </div>
+          </summary>
           <div id="savedBagList" class="saved-bag-list empty-list">Belum ada Bagshield yang disimpan.</div>
-          <div class="draft-actions">
-            <button id="btnNewBag" class="btn outline">＋ Bagshield Baru</button>
-            <button id="btnFinalize" class="btn primary" disabled>Finalisasi & Download Excel →</button>
-          </div>
-          <div id="uploadProgressWrap" class="progress-wrap hidden"><div class="progress-track"><span id="uploadProgress"></span></div><div id="progressText" class="progress-text">Menyiapkan...</div></div>
+        </details>
+
+        <div class="draft-actions">
+          <button id="btnNewBag" class="btn outline" type="button">＋ Bagshield baru</button>
+          <button id="btnFinalize" class="btn primary" type="button" disabled>Finalisasi laporan →</button>
+        </div>
+        <div id="uploadProgressWrap" class="progress-wrap hidden">
+          <div class="progress-track"><span id="uploadProgress"></span></div>
+          <div id="progressText" class="progress-text">Menyiapkan...</div>
         </div>
       </section>
 
+      <!-- STEP 3: SUCCESS -->
       <section id="successSection" class="panel success-panel hidden">
         <div class="success-icon">✓</div>
         <div class="eyebrow">LAPORAN SELESAI</div>
-        <h2>Data berhasil disimpan</h2>
-        <p id="successSummary" class="muted">Rekap telah tersimpan di Google Sheets dan foto di Google Drive.</p>
+        <h1>Data berhasil disimpan</h1>
+        <p id="successSummary" class="muted">Rekap tersimpan di Google Sheets dan foto di Google Drive.</p>
         <div class="success-links">
-          <a id="summaryLink" class="btn outline full" href="#" target="_blank" rel="noopener">Buka Rekap Bagshield</a>
-          <a id="detailLink" class="btn outline full" href="#" target="_blank" rel="noopener">Buka Detail Paket</a>
-          <a id="driveLink" class="btn outline full" href="#" target="_blank" rel="noopener">Buka Folder Foto Google Drive</a>
-          <button id="btnDownloadAgain" class="btn orange full">⬇ Download Excel Lagi</button>
+          <a id="summaryLink" class="btn outline full" href="#" target="_blank" rel="noopener">Buka rekap Bagshield</a>
+          <a id="detailLink" class="btn outline full" href="#" target="_blank" rel="noopener">Buka detail paket</a>
+          <a id="driveLink" class="btn outline full" href="#" target="_blank" rel="noopener">Buka folder foto Drive</a>
+          <button id="btnDownloadAgain" class="btn orange full" type="button">⬇ Download Excel lagi</button>
         </div>
-        <button id="btnNewReport" class="btn primary full">＋ Buat Laporan Baru</button>
+        <button id="btnNewReport" class="btn primary full" type="button">＋ Buat laporan baru</button>
       </section>
 
-      <footer class="app-footer"><span>Helpdesk Serah Terima Paket</span><span>Mobile Web · Google Sheets & Drive</span></footer>
+      <footer class="app-footer"><span>Helpdesk Serah Terima Paket</span><span>Google Sheets · Google Drive</span></footer>
     </div>
   </main>
 
   <div id="scannerModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="scannerTitle">
     <div class="modal-card scanner-card">
-      <div class="modal-heading"><div><div class="eyebrow">PEMINDAI BARCODE</div><h2 id="scannerTitle">Scan Barcode</h2></div><button id="btnCloseScanner" class="icon-btn close-btn" aria-label="Tutup pemindai">×</button></div>
+      <div class="modal-heading">
+        <div>
+          <div class="eyebrow">PEMINDAI BARCODE</div>
+          <h2 id="scannerTitle">Scan barcode</h2>
+        </div>
+        <button id="btnCloseScanner" class="icon-btn close-btn" type="button" aria-label="Tutup pemindai">×</button>
+      </div>
       <div id="reader"></div>
-      <p class="muted tiny">Arahkan kamera belakang ke barcode. Pastikan izin kamera sudah diberikan di Chrome.</p>
+      <p class="muted tiny">Arahkan kamera belakang ke barcode. Pastikan izin kamera aktif di Chrome.</p>
     </div>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

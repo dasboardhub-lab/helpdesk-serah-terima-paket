@@ -320,29 +320,30 @@
     return inCurrent || inSaved;
   }
 
-  async function addPackage() {
+  async function addPackage(options = {}) {
     if (!state.activeBag) state.activeBag = newEmptyBag();
     const hasResi = packageMode === 'hasResi';
     const awb = $('awb').value.trim();
     const details = hasResi ? $('resiNotes').value.trim() : $('characteristics').value.trim();
+    const keepAwbFocus = options.keepAwbFocus === true && document.activeElement === $('awb');
 
     if (hasResi && !awb) {
       toast('Nomor resi wajib diisi atau discan.');
-      $('awb').focus();
-      return;
+      if (!options.fromScanner) $('awb').focus({ preventScroll: true });
+      return false;
     }
     if (!hasResi && details.length < 5) {
       toast('Ciri-ciri fisik paket wajib dijelaskan dengan cukup jelas.');
-      $('characteristics').focus();
-      return;
+      $('characteristics').focus({ preventScroll: true });
+      return false;
     }
     if (!hasResi && !photoDataUrl) {
       toast('Paket tanpa resi wajib memiliki foto bukti.');
-      return;
+      return false;
     }
     if (hasResi && getCurrentPackageDuplicates(awb)) {
       toast(`AWB ${awb} sudah pernah dimasukkan dalam laporan ini.`);
-      return;
+      return false;
     }
 
     state.activeBag.packages.push({
@@ -355,10 +356,36 @@
       photoName: ''
     });
 
-    resetPackageForm();
+    // Bersihkan hanya field yang dipakai. Jangan mengganti mode atau
+    // memindahkan fokus: ini mencegah keyboard HP menutup/muncul berulang.
+    if (hasResi) {
+      $('awb').value = '';
+      $('resiNotes').value = '';
+    } else {
+      $('characteristics').value = '';
+    }
+    $('packagePhoto').value = '';
+    photoDataUrl = '';
+    $('photoPreview').src = '';
+    $('photoPreview').classList.add('hidden');
+    $('photoInfo').textContent = 'Belum ada foto';
+
     renderAll();
-    try { await persistDraft(); } catch (error) { toast(error.message); }
-    toast('Paket berhasil ditambahkan ke Bagshield.');
+    try {
+      await persistDraft();
+    } catch (error) {
+      toast(error.message);
+      return false;
+    }
+
+    // Saat scanner fisik/keyboard mengirim Enter, input AWB tetap aktif.
+    // Jangan memanggil focus() lagi karena dapat memicu keyboard melompat.
+    if (keepAwbFocus && document.activeElement !== $('awb')) {
+      $('awb').focus({ preventScroll: true });
+    }
+
+    toast(options.fromScanner ? `AWB ${awb} berhasil ditambahkan.` : 'Paket berhasil ditambahkan ke Bagshield.');
+    return true;
   }
 
   function removePackage(packageId) {
@@ -401,7 +428,7 @@
     resetPackageForm();
     renderAll();
     await persistDraft();
-    $('bagshieldNo').focus();
+    if ($('savedPanel')) $('savedPanel').open = true;
   }
 
   function editBag(bagId) {
@@ -415,7 +442,6 @@
     resetPackageForm();
     renderAll();
     persistDraft().catch(error => toast(error.message));
-    $('bagshieldNo').focus();
     toast('Mode revisi Bagshield aktif.');
   }
 
@@ -450,7 +476,7 @@
     resetPackageForm();
     renderAll();
     persistDraft().catch(error => toast(error.message));
-    $('bagshieldNo').focus();
+    if ($('savedPanel')) $('savedPanel').open = false;
   }
 
   // RENDER UI
@@ -555,15 +581,21 @@
           const code = String(decodedText || '').trim();
           if (!code) return;
           scannerLocked = true;
-          if (scannerTarget === 'bag') {
+          const target = scannerTarget;
+
+          if (target === 'bag') {
             $('bagshieldNo').value = code;
             if (state.activeBag) state.activeBag.bagshieldNo = code;
+            await persistDraft();
+            await closeScanner();
+            toast(`Bagshield terbaca: ${code}`);
+            // Tidak auto-focus agar keyboard HP tidak muncul setelah kamera ditutup.
           } else {
             $('awb').value = code;
+            await closeScanner();
+            // Scan kamera langsung memasukkan AWB ke Bagshield tanpa membuka keyboard.
+            await addPackage({ fromScanner: true, keepAwbFocus: false });
           }
-          await closeScanner();
-          toast(`Barcode terbaca: ${code}`);
-          (scannerTarget === 'bag' ? $('bagshieldNo') : $('awb')).focus();
         },
         () => {}
       );
@@ -841,7 +873,7 @@
   $('btnScanAwb').addEventListener('click', () => openScanner('awb'));
   $('btnCloseScanner').addEventListener('click', closeScanner);
   $('scannerModal').addEventListener('click', event => { if (event.target === $('scannerModal')) closeScanner(); });
-  $('awb').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addPackage(); } });
+  $('awb').addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addPackage({ keepAwbFocus: true }); } });
   $('bagshieldNo').addEventListener('input', () => { if (state.activeBag) state.activeBag.bagshieldNo = $('bagshieldNo').value; });
   $('btnDownloadAgain').addEventListener('click', async () => {
     if (!lastSavedReport) return toast('Data laporan tidak tersedia di sesi ini.');
