@@ -1,0 +1,21 @@
+PANDUAN SINGKAT DEPLOY GITHUB + VERCEL
+
+1. Buat Google Spreadsheet dan Shared Drive perusahaan. Buat folder foto di dalam Shared Drive (bukan My Drive biasa).
+2. Buat Google Cloud Service Account, aktifkan Google Sheets API + Google Drive API, lalu unduh JSON key.
+3. Bagikan Spreadsheet kepada client_email Service Account sebagai Editor. Tambahkan Service Account sebagai anggota Shared Drive dengan peran Contributor atau peran yang dapat menambahkan file.
+4. Encode JSON Service Account ke Base64 dengan PowerShell:
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$HOME\Downloads\service-account.json"))
+5. Upload seluruh isi folder proyek ke repository GitHub. Jangan upload JSON key.
+6. Import repository tersebut di Vercel (Framework: Other).
+7. Tambahkan Environment Variables:
+   GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 = hasil Base64
+   GOOGLE_SPREADSHEET_ID = ID Spreadsheet
+   GOOGLE_DRIVE_FOLDER_ID = ID folder foto
+   APP_ACCESS_PIN = kode akses tim
+8. Deploy / Redeploy.
+9. Buka link Vercel di Chrome, masukkan kode akses.
+10. Uji satu laporan dengan satu AWB dan satu paket tanpa resi.
+
+Sheet REKAP_BAGSHIELD dan DETAIL_PAKET dibuat otomatis.
+Foto masuk ke folder dalam Shared Drive. Service Account tidak bisa membuat file pada My Drive biasa karena tidak memiliki kuota Drive; jika tidak ada Shared Drive, gunakan integrasi OAuth akun Google.
+Kamera memerlukan HTTPS dan izin kamera Chrome.

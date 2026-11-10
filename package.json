@@ -1,0 +1,12 @@
+{
+  "name": "helpdesk-serah-terima-paket",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mobile web app pencatatan serah terima paket dengan Google Sheets dan Google Drive",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}
