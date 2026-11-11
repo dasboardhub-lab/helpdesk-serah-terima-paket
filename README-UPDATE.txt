@@ -1,43 +1,26 @@
-HELPDESK SERAH TERIMA PAKET — UI/UX REFRESH
+HELPDESK SERAH TERIMA PAKET — COLOR REFRESH 60:30:10
 
-File yang perlu diganti di repository GitHub:
-1. index.html
-2. styles.css
-3. app.js
+Palet:
+60% Ivory Cream  #F4EFE6
+30% Royal Navy   #1B2A4A
+10% Signal Orange #FF5F1F
 
-Tidak perlu mengubah folder api/, lib/, package.json, vercel.json,
-Code.gs, Environment Variables, Google Sheets, atau Google Drive.
+File yang disertakan:
+- index.html
+- styles.css
+- app.js
 
-Perubahan UI/UX:
-- Menghilangkan hero besar dan instruksi panjang.
-- Merapikan layar data utama dan layar Bagshield.
-- Menampilkan ringkasan Bagshield/paket secara ringkas.
-- Menyembunyikan keterangan resi opsional di dalam dropdown.
-- Menjadikan daftar Bagshield tersimpan dapat dilipat.
-- Memperbesar area input dan tombol agar nyaman di HP.
-- Memakai font input 16px agar Chrome mobile tidak auto-zoom.
-- Header tidak sticky di HP agar tidak memakan ruang saat keyboard muncul.
+Penting:
+- app.js dipertahankan dari versi yang sudah memiliki ekspor Excel dengan foto tertanam.
+- Code.gs, api/, lib/, package.json, dan vercel.json tidak perlu diganti.
 
-Perbaikan keyboard:
-- Setelah scan kamera AWB, paket langsung ditambahkan tanpa memanggil focus()
-  sehingga keyboard HP tidak muncul lagi otomatis.
-- Setelah scan Bagshield, kolom tidak auto-focus.
-- Setelah Bagshield disimpan, aplikasi tidak otomatis fokus ke kolom Bagshield.
-- Setelah AWB ditambahkan dari scanner fisik dengan Enter, input AWB tetap aktif
-  agar pemindaian berikutnya bisa langsung diterima.
-- Aplikasi hanya memindahkan fokus ketika ada validasi yang memang memerlukan
-  pengguna memperbaiki kolom.
+Cara update GitHub:
+1. Buka repository helpdesk-serah-terima-paket dan pilih branch main.
+2. Klik Add file > Upload files.
+3. Upload index.html, styles.css, dan app.js ke root repository.
+4. Pastikan Replace file jika diminta.
+5. Commit changes ke main.
+6. Tunggu deployment Production Vercel berstatus Ready.
 
-Cara update via GitHub web:
-1. Buka repository dan pilih branch main (atau branch yang akan diuji).
-2. Buka file index.html, styles.css, dan app.js satu per satu.
-3. Pilih Edit (ikon pensil), ganti seluruh isi file dengan file pengganti
-   yang namanya sama, lalu Commit changes.
-   Alternatif: Add file > Upload files, setelah mengekstrak ZIP di laptop.
-4. Pastikan ketiga file masuk ke root repository, bukan ke subfolder.
-5. Setelah ketiganya ter-commit, tunggu Vercel deployment menjadi Ready.
-6. Buka website dan refresh dengan Ctrl+Shift+R.
-
-Catatan:
-- Jangan mengganti Code.gs atau backend API untuk pembaruan UI ini.
-- Untuk test scan kamera, gunakan website HTTPS dari Vercel dan beri izin kamera.
+Jika sebelumnya app.js di repository sudah memiliki perbaikan yang lebih baru daripada file ini,
+jangan timpa app.js. Dalam hal itu upload hanya index.html dan styles.css.

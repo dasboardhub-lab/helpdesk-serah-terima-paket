@@ -742,11 +742,38 @@
     setConnection('online', 'Laporan berhasil disimpan');
   }
 
+  // Make a compact JPEG thumbnail for embedding in Excel.
+  // The original photo remains in Google Drive; this copy is optimized for workbook size.
+  async function makeExcelPhoto(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) {
+      return null;
+    }
+
+    const image = await new Promise((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error('Foto bukti tidak dapat dibaca untuk dimasukkan ke Excel.'));
+      element.src = dataUrl;
+    });
+
+    const maxDimension = 720;
+    const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Browser tidak dapat memproses foto untuk Excel.');
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    return canvas.toDataURL('image/jpeg', 0.68);
+  }
+
   async function downloadExcel(report) {
     if (!window.ExcelJS) throw new Error('Library Excel belum termuat. Periksa internet, lalu coba Download Excel Lagi.');
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Helpdesk Serah Terima Paket';
     workbook.created = new Date();
+    workbook.subject = 'Rekap Bagshield, detail paket, dan foto bukti';
 
     const summary = workbook.addWorksheet('Rekap Bagshield', { views: [{ state: 'frozen', ySplit: 1 }] });
     summary.columns = [
@@ -782,31 +809,74 @@
       { header: 'No Bagshield', key: 'bag', width: 25 },
       { header: 'Status Resi', key: 'status', width: 16 },
       { header: 'No Resi / AWB', key: 'awb', width: 25 },
-      { header: 'Ciri-ciri / Keterangan Paket', key: 'desc', width: 45 },
-      { header: 'Link Foto Google Drive', key: 'photo', width: 38 }
+      { header: 'Ciri-ciri / Keterangan Paket', key: 'desc', width: 42 },
+      { header: 'Foto Bukti (tertanam)', key: 'photo', width: 19 },
+      { header: 'Link Foto Google Drive', key: 'photoLink', width: 36 }
     ];
 
     let rowNumber = 1;
-    report.bagshields.forEach(bag => bag.packages.forEach(pkg => {
-      const row = detail.addRow({
-        no: rowNumber++,
-        date: report.main.shipDate,
-        staff: report.main.staff,
-        hub: report.main.hub,
-        bag: bag.bagshieldNo,
-        status: pkg.hasResi ? 'ADA RESI' : 'TANPA RESI',
-        awb: pkg.awb || '-',
-        desc: pkg.characteristics || '-',
-        photo: pkg.photoUrl || '-'
-      });
-      if (pkg.photoUrl) {
-        row.getCell(9).value = { text: 'Buka Foto Bukti', hyperlink: pkg.photoUrl };
-        row.getCell(9).font = { color: { argb: 'FF0563C8' }, underline: true };
+    let embeddedPhotos = 0;
+    let photosWithoutLocalCopy = 0;
+
+    for (const bag of report.bagshields) {
+      for (const pkg of bag.packages) {
+        const row = detail.addRow({
+          no: rowNumber++,
+          date: report.main.shipDate,
+          staff: report.main.staff,
+          hub: report.main.hub,
+          bag: bag.bagshieldNo,
+          status: pkg.hasResi ? 'ADA RESI' : 'TANPA RESI',
+          awb: pkg.awb || '-',
+          desc: pkg.characteristics || '-',
+          photo: pkg.photoDataUrl ? 'Foto terlampir' : (pkg.photoUrl ? 'Foto ada di Drive' : 'Tidak ada foto'),
+          photoLink: pkg.photoUrl || '-'
+        });
+
+        row.height = 62;
+
+        // Embed image inside the workbook, so it is visible without opening Drive.
+        // Photos are kept in photoDataUrl during the same report session.
+        if (pkg.photoDataUrl) {
+          try {
+            const compactPhoto = await makeExcelPhoto(pkg.photoDataUrl);
+            if (compactPhoto) {
+              const imageId = workbook.addImage({
+                base64: compactPhoto,
+                extension: 'jpeg'
+              });
+              detail.addImage(imageId, {
+                tl: { col: 8, row: row.number - 1 },
+                ext: { width: 112, height: 78 }
+              });
+              row.getCell(9).value = 'Foto terlampir';
+              row.getCell(9).font = { color: { argb: 'FF12865B' }, bold: true };
+              embeddedPhotos += 1;
+            }
+          } catch (imageError) {
+            console.warn('Gagal menanam foto ke Excel:', imageError);
+            row.getCell(9).value = 'Gagal menyisipkan foto';
+            row.getCell(9).font = { color: { argb: 'FFD9344B' }, italic: true };
+          }
+        } else if (pkg.photoUrl) {
+          // Keep Drive link as a fallback if an older report has no local image copy.
+          row.getCell(9).value = 'Buka tautan Drive';
+          row.getCell(9).font = { color: { argb: 'FFB26A00' }, italic: true };
+          photosWithoutLocalCopy += 1;
+        }
+
+        if (pkg.photoUrl) {
+          row.getCell(10).value = {
+            text: 'Buka Foto di Drive',
+            hyperlink: pkg.photoUrl
+          };
+          row.getCell(10).font = { color: { argb: 'FF0563C8' }, underline: true };
+        }
       }
-    }));
+    }
 
     [summary, detail].forEach(sheet => {
-      sheet.getRow(1).height = 30;
+      sheet.getRow(1).height = 32;
       sheet.getRow(1).eachCell(cell => {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC2185B' } };
         cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -814,7 +884,7 @@
       });
       sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: sheet.columnCount } };
       sheet.eachRow((row, index) => {
-        if (index > 1) row.alignment = { vertical: 'top', wrapText: true };
+        if (index > 1) row.alignment = { vertical: 'middle', wrapText: true };
       });
     });
 
@@ -828,7 +898,13 @@
     document.body.appendChild(link);
     link.click();
     link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 8000);
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
+
+    if (photosWithoutLocalCopy > 0) {
+      toast(`Excel selesai: ${embeddedPhotos} foto tertanam. ${photosWithoutLocalCopy} foto lama hanya memiliki tautan Drive.`);
+    } else {
+      toast(`Excel selesai dengan ${embeddedPhotos} foto tertanam langsung di lembar Detail Paket.`);
+    }
   }
 
   function startNewReport() {
